@@ -34,19 +34,7 @@ module "snowflake_privatelink_aws" {
   #checkov:skip=CKV2_AWS_38:This is private hosted zone, so this check seems like a false-positive
   #checkov:skip=CKV2_AWS_39:Query logging configuration should be handled outside of the basic module - example below
 
-  context = module.this.context
-
-  enabled         = module.this.enabled
-  descriptor_name = "privatelink"
-  descriptor_formats = {
-    privatelink = {
-      labels = ["name", "attributes"]
-      format = "%v-%v"
-    }
-  }
-
-  name       = "snowflake"
-  attributes = ["privatelink"]
+  name = "snowflake"
 
   vpc_id         = resource.aws_vpc.this.id
   subnet_ids     = [resource.aws_subnet.this.id]

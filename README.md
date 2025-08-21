@@ -50,10 +50,61 @@ In order to successfully setup a PrivateLink in AWS - manual authorization of Pr
 more information can be found in Snowflake Documentation -
 <https://docs.snowflake.com/en/user-guide/admin-security-privatelink.html#enabling-aws-privatelink>.
 
-## EXAMPLES
+## Breaking changes in v2.x of the module
 
-* [Complete example](examples/complete/)
-* [Simple example](examples/simple/)
+### Due to replacement of nulllabel (`context.tf`) with context provider, some **breaking changes** were introduced
+
+List od code and variable (API) changes:
+
+- Removed `context.tf` file (a single-file module with additonal variables), which implied a removal of all its variables (except `name`):
+  - `descriptor_formats`
+  - `label_value_case`
+  - `label_key_case`
+  - `id_length_limit`
+  - `regex_replace_chars`
+  - `label_order`
+  - `additional_tag_map`
+  - `tags`
+  - `labels_as_tags`
+  - `attributes`
+  - `delimiter`
+  - `stage`
+  - `environment`
+  - `tenant`
+  - `namespace`
+  - `enabled`
+  - `context`
+- Remove support `enabled` flag - that might cause some backward compatibility issues with terraform state (please take into account that proper `move` clauses were added to minimize the impact), but proceed with caution
+- Additional `context` provider configuration
+- New variables were added, to allow naming configuration via `context` provider:
+  - `context_templates`
+  - `name_schema`
+
+### Due to rename of Snowflake terraform provider source, all `versions.tf` files were updated accordingly.
+
+  Please keep in mind to mirror this change in your own repos also.
+
+  For more information about provider rename, refer to [Snowflake documentation](https://github.com/snowflakedb/terraform-provider-snowflake/blob/main/SNOWFLAKEDB_MIGRATION.md).
+
+### Maximal version of supported provider was unblocked
+
+Keep in mind that, starting with Snowflake provider version `1.x`, the `snowflake_system_get_privatelink_config` resource is considered a preview feature and must be explicitly enabled in the provider configuration.
+
+  **Required Provider Configuration:**
+
+  ```terraform
+  provider "snowflake" {
+    preview_features_enabled = ["snowflake_system_get_privatelink_config_datasource"]
+  }
+  ```
+
+  Without this configuration, you will encounter the following error:
+
+  ```shell
+  Error: snowflake_system_get_privatelink_config_datasource is currently a preview feature, and must be enabled by adding snowflake_system_get_privatelink_config_datasource to preview_features_enabled in Terraform configuration.
+  ```
+
+  For more information about preview features, refer to the [Snowflake provider documentation](https://registry.terraform.io/providers/snowflakedb/snowflake/latest/docs/resources/stage#preview-features) and [Snowflake resource documentation](https://registry.terraform.io/providers/snowflakedb/snowflake/latest/docs/resources/stage).
 
 <!-- BEGIN_TF_DOCS -->
 
@@ -66,36 +117,18 @@ more information can be found in Snowflake Documentation -
 |------|-------------|------|---------|:--------:|
 | <a name="input_account_name"></a> [account\_name](#input\_account\_name) | Name of the Snowflake account, used to create regionless privatelink fqdns | `string` | `null` | no |
 | <a name="input_additional_dns_records"></a> [additional\_dns\_records](#input\_additional\_dns\_records) | List of additional Route53 records to be added to local `privatelink.snowflakecomputing.com` hosted zone that points to Snowflake VPC endpoint. | `list(string)` | `[]` | no |
-| <a name="input_additional_tag_map"></a> [additional\_tag\_map](#input\_additional\_tag\_map) | Additional key-value pairs to add to each map in `tags_as_list_of_maps`. Not added to `tags` or `id`.<br>This is for some rare cases where resources want additional configuration of tags<br>and therefore take a list of maps with tag key, value, and additional configuration. | `map(string)` | `{}` | no |
 | <a name="input_allow_vpc_cidr"></a> [allow\_vpc\_cidr](#input\_allow\_vpc\_cidr) | Whether allow access to the Snowflake PrivateLink endpoint from the whole VPC | `bool` | `true` | no |
 | <a name="input_allowed_cidrs"></a> [allowed\_cidrs](#input\_allowed\_cidrs) | List of subnet CIDRs that will be allowed to access Snowflake endpoint via PrivateLink | `list(string)` | `[]` | no |
-| <a name="input_attributes"></a> [attributes](#input\_attributes) | ID element. Additional attributes (e.g. `workers` or `cluster`) to add to `id`,<br>in the order they appear in the list. New attributes are appended to the<br>end of the list. The elements of the list are joined by the `delimiter`<br>and treated as a single ID element. | `list(string)` | `[]` | no |
-| <a name="input_context"></a> [context](#input\_context) | Single object for setting entire context at once.<br>See description of individual variables for details.<br>Leave string and numeric variables as `null` to use default value.<br>Individual variable settings (non-null) override settings in context object,<br>except for attributes, tags, and additional\_tag\_map, which are merged. | `any` | <pre>{<br>  "additional_tag_map": {},<br>  "attributes": [],<br>  "delimiter": null,<br>  "descriptor_formats": {},<br>  "enabled": true,<br>  "environment": null,<br>  "id_length_limit": null,<br>  "label_key_case": null,<br>  "label_order": [],<br>  "label_value_case": null,<br>  "labels_as_tags": [<br>    "unset"<br>  ],<br>  "name": null,<br>  "namespace": null,<br>  "regex_replace_chars": null,<br>  "stage": null,<br>  "tags": {},<br>  "tenant": null<br>}</pre> | no |
-| <a name="input_delimiter"></a> [delimiter](#input\_delimiter) | Delimiter to be used between ID elements.<br>Defaults to `-` (hyphen). Set to `""` to use no delimiter at all. | `string` | `null` | no |
-| <a name="input_descriptor_formats"></a> [descriptor\_formats](#input\_descriptor\_formats) | Describe additional descriptors to be output in the `descriptors` output map.<br>Map of maps. Keys are names of descriptors. Values are maps of the form<br>`{<br>   format = string<br>   labels = list(string)<br>}`<br>(Type is `any` so the map values can later be enhanced to provide additional options.)<br>`format` is a Terraform format string to be passed to the `format()` function.<br>`labels` is a list of labels, in order, to pass to `format()` function.<br>Label values will be normalized before being passed to `format()` so they will be<br>identical to how they appear in `id`.<br>Default is `{}` (`descriptors` output will be empty). | `any` | `{}` | no |
-| <a name="input_descriptor_name"></a> [descriptor\_name](#input\_descriptor\_name) | Name of the descriptor used to form a resource name | `string` | `"snowflake-privatelink"` | no |
-| <a name="input_enabled"></a> [enabled](#input\_enabled) | Set to false to prevent the module from creating any resources | `bool` | `null` | no |
-| <a name="input_environment"></a> [environment](#input\_environment) | ID element. Usually used for region e.g. 'uw2', 'us-west-2', OR role 'prod', 'staging', 'dev', 'UAT' | `string` | `null` | no |
-| <a name="input_id_length_limit"></a> [id\_length\_limit](#input\_id\_length\_limit) | Limit `id` to this many characters (minimum 6).<br>Set to `0` for unlimited length.<br>Set to `null` for keep the existing setting, which defaults to `0`.<br>Does not affect `id_full`. | `number` | `null` | no |
-| <a name="input_label_key_case"></a> [label\_key\_case](#input\_label\_key\_case) | Controls the letter case of the `tags` keys (label names) for tags generated by this module.<br>Does not affect keys of tags passed in via the `tags` input.<br>Possible values: `lower`, `title`, `upper`.<br>Default value: `title`. | `string` | `null` | no |
-| <a name="input_label_order"></a> [label\_order](#input\_label\_order) | The order in which the labels (ID elements) appear in the `id`.<br>Defaults to ["namespace", "environment", "stage", "name", "attributes"].<br>You can omit any of the 6 labels ("tenant" is the 6th), but at least one must be present. | `list(string)` | `null` | no |
-| <a name="input_label_value_case"></a> [label\_value\_case](#input\_label\_value\_case) | Controls the letter case of ID elements (labels) as included in `id`,<br>set as tag values, and output by this module individually.<br>Does not affect values of tags passed in via the `tags` input.<br>Possible values: `lower`, `title`, `upper` and `none` (no transformation).<br>Set this to `title` and set `delimiter` to `""` to yield Pascal Case IDs.<br>Default value: `lower`. | `string` | `null` | no |
-| <a name="input_labels_as_tags"></a> [labels\_as\_tags](#input\_labels\_as\_tags) | Set of labels (ID elements) to include as tags in the `tags` output.<br>Default is to include all labels.<br>Tags with empty values will not be included in the `tags` output.<br>Set to `[]` to suppress all generated tags.<br>**Notes:**<br>  The value of the `name` tag, if included, will be the `id`, not the `name`.<br>  Unlike other `null-label` inputs, the initial setting of `labels_as_tags` cannot be<br>  changed in later chained modules. Attempts to change it will be silently ignored. | `set(string)` | <pre>[<br>  "default"<br>]</pre> | no |
-| <a name="input_name"></a> [name](#input\_name) | ID element. Usually the component or solution name, e.g. 'app' or 'jenkins'.<br>This is the only ID element not also included as a `tag`.<br>The "name" tag is set to the full `id` string. There is no tag with the value of the `name` input. | `string` | `null` | no |
-| <a name="input_namespace"></a> [namespace](#input\_namespace) | ID element. Usually an abbreviation of your organization name, e.g. 'eg' or 'cp', to help ensure generated IDs are globally unique | `string` | `null` | no |
+| <a name="input_context_templates"></a> [context\_templates](#input\_context\_templates) | Map of context templates used for naming conventions - this variable supersedes `naming_scheme.properties` and `naming_scheme.delimiter` configuration | `map(string)` | `{}` | no |
+| <a name="input_name"></a> [name](#input\_name) | Name of the resource | `string` | n/a | yes |
+| <a name="input_name_scheme"></a> [name\_scheme](#input\_name\_scheme) | Naming scheme configuration for the resource. This configuration is used to generate names using context provider:<br/>    - `properties` - list of properties to use when creating the name - is superseded by `var.context_templates`<br/>    - `delimiter` - delimited used to create the name from `properties` - is superseded by `var.context_templates`<br/>    - `context_template_name` - name of the context template used to create the name<br/>    - `replace_chars_regex` - regex to use for replacing characters in property-values created by the provider - any characters that match the regex will be removed from the name<br/>    - `extra_values` - map of extra label-value pairs, used to create a name<br/>    - `uppercase` - convert name to uppercase | <pre>object({<br/>    properties            = optional(list(string), ["environment", "name"])<br/>    delimiter             = optional(string, "_")<br/>    context_template_name = optional(string, "snowflake-privatelink")<br/>    replace_chars_regex   = optional(string, "[^a-zA-Z0-9_]")<br/>    extra_values          = optional(map(string))<br/>    uppercase             = optional(bool, false)<br/>  })</pre> | `{}` | no |
 | <a name="input_organisation_name"></a> [organisation\_name](#input\_organisation\_name) | Name of the organisation, where the Snowflake account is created, used to create regionless privatelink fqdns | `string` | `null` | no |
-| <a name="input_regex_replace_chars"></a> [regex\_replace\_chars](#input\_regex\_replace\_chars) | Terraform regular expression (regex) string.<br>Characters matching the regex will be removed from the ID elements.<br>If not set, `"/[^a-zA-Z0-9-]/"` is used to remove all characters other than hyphens, letters and digits. | `string` | `null` | no |
-| <a name="input_stage"></a> [stage](#input\_stage) | ID element. Usually used to indicate role, e.g. 'prod', 'staging', 'source', 'build', 'test', 'deploy', 'release' | `string` | `null` | no |
 | <a name="input_subnet_ids"></a> [subnet\_ids](#input\_subnet\_ids) | List of AWS Subnet IDs where Snowflake AWS PrivateLink Endpoint interfaces will be created | `list(string)` | n/a | yes |
-| <a name="input_tags"></a> [tags](#input\_tags) | Additional tags (e.g. `{'BusinessUnit': 'XYZ'}`).<br>Neither the tag keys nor the tag values will be modified by this module. | `map(string)` | `{}` | no |
-| <a name="input_tenant"></a> [tenant](#input\_tenant) | ID element \_(Rarely used, not included by default)\_. A customer identifier, indicating who this instance of a resource is for | `string` | `null` | no |
 | <a name="input_vpc_id"></a> [vpc\_id](#input\_vpc\_id) | VPC ID where the AWS PrivateLink VPC Endpoint will be created | `string` | n/a | yes |
 
 ## Modules
 
-| Name | Source | Version |
-|------|--------|---------|
-| <a name="module_this"></a> [this](#module\_this) | cloudposse/label/null | 0.25.0 |
+No modules.
 
 ## Outputs
 
@@ -115,7 +148,8 @@ more information can be found in Snowflake Documentation -
 | Name | Version |
 |------|---------|
 | <a name="provider_aws"></a> [aws](#provider\_aws) | ~> 4.0 |
-| <a name="provider_snowflake"></a> [snowflake](#provider\_snowflake) | ~> 0.47 |
+| <a name="provider_context"></a> [context](#provider\_context) | >=0.4.0 |
+| <a name="provider_snowflake"></a> [snowflake](#provider\_snowflake) | >= 0.47 |
 
 ## Requirements
 
@@ -123,7 +157,8 @@ more information can be found in Snowflake Documentation -
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3 |
 | <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 4.0 |
-| <a name="requirement_snowflake"></a> [snowflake](#requirement\_snowflake) | ~> 0.47 |
+| <a name="requirement_context"></a> [context](#requirement\_context) | >=0.4.0 |
+| <a name="requirement_snowflake"></a> [snowflake](#requirement\_snowflake) | >= 0.47 |
 
 ## Resources
 
@@ -138,7 +173,9 @@ more information can be found in Snowflake Documentation -
 | [aws_security_group.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group) | resource |
 | [aws_vpc_endpoint.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_endpoint) | resource |
 | [aws_vpc.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/vpc) | data source |
-| [snowflake_system_get_privatelink_config.this](https://registry.terraform.io/providers/Snowflake-Labs/snowflake/latest/docs/data-sources/system_get_privatelink_config) | data source |
+| [context_label.this](https://registry.terraform.io/providers/cloudposse/context/latest/docs/data-sources/label) | data source |
+| [context_tags.this](https://registry.terraform.io/providers/cloudposse/context/latest/docs/data-sources/tags) | data source |
+| [snowflake_system_get_privatelink_config.this](https://registry.terraform.io/providers/snowflakedb/snowflake/latest/docs/data-sources/system_get_privatelink_config) | data source |
 <!-- END_TF_DOCS -->
 
 ## CONTRIBUTING
