@@ -1,18 +1,11 @@
-variable "name" {
-  description = "Name of the resource"
-  type        = string
-}
-
-variable "organization_name" {
+variable "snowflake_organization_name" {
   description = "Name of the organization, where the Snowflake account is created, used to create regionless privatelink fqdns"
   type        = string
-  default     = null
 }
 
-variable "account_name" {
+variable "snowflake_account_name" {
   description = "Name of the Snowflake account, used to create regionless privatelink fqdns"
   type        = string
-  default     = null
 }
 
 variable "user" {

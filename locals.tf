@@ -6,5 +6,5 @@ locals {
     var.allowed_cidrs
   )
 
-  snowflake_account = var.organisation_name != null && var.account_name != null ? "${var.organisation_name}-${var.account_name}" : null
+  snowflake_account = var.organization_name != null && var.account_name != null ? "${var.organization_name}-${var.account_name}" : null
 }

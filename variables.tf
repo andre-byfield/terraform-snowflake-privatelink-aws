@@ -42,8 +42,8 @@ variable "additional_dns_records" {
   }
 }
 
-variable "organisation_name" {
-  description = "Name of the organisation, where the Snowflake account is created, used to create regionless privatelink fqdns"
+variable "organization_name" {
+  description = "Name of the organization, where the Snowflake account is created, used to create regionless privatelink fqdns"
   type        = string
   default     = null
 }
