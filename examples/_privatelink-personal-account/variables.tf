@@ -1,9 +1,9 @@
-variable "snowflake_organization_name" {
+variable "organization_name" {
   description = "Name of the organization, where the Snowflake account is created, used to create regionless privatelink fqdns"
   type        = string
 }
 
-variable "snowflake_account_name" {
+variable "account_name" {
   description = "Name of the Snowflake account, used to create regionless privatelink fqdns"
   type        = string
 }
@@ -13,6 +13,10 @@ variable "user" {
   type        = string
 }
 
+variable "role" {
+  description = "Name of the Snowflake role for privileges"
+  type        = string
+}
 variable "authenticator" {
   description = "Authentication method for Snowflake"
   type        = string

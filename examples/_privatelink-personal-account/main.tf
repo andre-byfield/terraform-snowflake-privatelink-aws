@@ -35,4 +35,9 @@ module "snowflake_privatelink_aws" {
 
   vpc_id     = resource.aws_vpc.this.id
   subnet_ids = [resource.aws_subnet.this.id]
+  allowed_cidrs  = ["10.0.0.0/8", "172.16.0.0/12"]
+  allow_vpc_cidr = true
+
+  organization_name = var.organization_name
+  account_name      = var.account_name
 }
