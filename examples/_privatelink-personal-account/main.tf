@@ -40,4 +40,8 @@ module "snowflake_privatelink_aws" {
 
   organization_name = var.organization_name
   account_name      = var.account_name
+
+    additional_dns_records = [
+    "app.us-east-1.privatelink.snowflakecomputing.com"
+  ]
 }
